@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="description" content="A simple weather application displaying current conditions with hippos">
+    <title>Swelling Hippo Weather</title>
+    
+    <!-- Favicon and Apple Touch Icons -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="images/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="images/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="images/apple-touch-icon-152x152.png">
+    
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body class="bg-light min-vh-100 d-flex flex-column">
+    <!-- Hippo Container -->
+<div id="hippoContainer" class="position-fixed top-0 start-0 w-100 h-100 overflow-hidden pe-none" aria-hidden="true">
+</div>
+    <!-- Main Container -->
+    <main class="container my-4 flex-grow-1">
+        
+        <!-- Header Row -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-4">
+                    <i class="bi bi-cloud-sun text-primary" aria-hidden="true"></i>
+                    Swelling Hippo Weather
+                </h1>
+                <p class="text-muted">Your local weather at a glance</p>
+            </div>
+        </div>
+        
+        <!-- Location Options Card -->
+        <div class="row mb-4 justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        
+                        <!-- Tab Navigation for Location Options -->
+                        <ul class="nav nav-tabs mb-3" id="locationTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="current-location-tab" data-bs-toggle="tab" data-bs-target="#current-location-pane" type="button" role="tab" aria-controls="current-location-pane" aria-selected="true">
+                                    <i class="bi bi-crosshair" aria-hidden="true"></i>
+                                    My Location
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-pane" type="button" role="tab" aria-controls="search-pane" aria-selected="false">
+                                    <i class="bi bi-search" aria-hidden="true"></i>
+                                    Search
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="locationTabContent">
+                            
+                            <!-- Current Location Tab -->
+                            <div class="tab-pane fade show active" id="current-location-pane" role="tabpanel" aria-labelledby="current-location-tab">
+                                <div class="text-center py-3">
+                                    <i class="bi bi-geo-alt-fill text-danger display-4" aria-hidden="true"></i>
+                                    <p class="mt-2 mb-3">Get weather for your current location</p>
+                                    <button class="btn btn-primary btn-lg" id="useMyLocationBtn" type="button">
+                                        <i class="bi bi-crosshair" aria-hidden="true"></i>
+                                        Use My Location
+                                    </button>
+                                    <p class="text-muted small mt-2">
+                                        <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                                        Requires location permission
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Tab -->
+                            <div class="tab-pane fade" id="search-pane" role="tabpanel" aria-labelledby="search-tab">
+                                <div class="py-3">
+                                    <label for="searchInput" class="form-label fw-bold">
+                                        <i class="bi bi-search text-primary" aria-hidden="true"></i>
+                                        Search by City or Zip Code
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchInput" placeholder="Enter city name or zip code" aria-label="Search for a city or zip code">
+                                        <button class="btn btn-primary" type="button" id="searchBtn">
+                                            <i class="bi bi-search" aria-hidden="true"></i>
+                                            Search
+                                        </button>
+                                    </div>
+                                    <div class="form-text">
+                                        Examples: "Dallas", "Nashville, TN", or "38501"
+                                    </div>
+                                    
+                                    <!-- Search Results Container -->
+                                    <div class="mt-3 d-none" id="searchResultsContainer">
+                                        <label class="form-label fw-bold">Select a location:</label>
+                                        <div class="list-group" id="searchResults">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div class="row justify-content-center d-none" id="loadingSpinner">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary fs-1" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted fs-5" id="loadingMessage">Fetching weather data...</p>
+            </div>
+        </div>
+        
+        <!-- Error Alert -->
+        <div class="row justify-content-center d-none" id="errorAlert">
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                    <span id="errorMessage">An error occurred while fetching weather data.</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Weather Display Section -->
+        <div class="d-none" id="weatherDisplay">
+            
+            <!-- Current Conditions Card -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-12 col-lg-10">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                
+                                <!-- Location Column -->
+                                <div class="col-12 col-md-4 text-center mb-3 mb-md-0">
+                                    <i class="bi bi-geo-alt-fill text-danger display-4" aria-hidden="true"></i>
+                                    <h2 class="text-danger mt-2 h3" id="locationName">--</h2>
+                                    <p class="text-muted mb-0" id="currentDateTime">--</p>
+                                </div>
+                                
+                                <!-- Current Conditions Column -->
+                                <div class="col-12 col-md-8">
+                                    <hr class="d-md-none">
+                                    <h3 class="card-title text-center text-md-start h4">Current Conditions</h3>
+                                    
+                                    <!-- Weather Icon and Description -->
+                                    <div class="text-center mb-3">
+                                        <i class="bi bi-cloud display-1" id="weatherIcon" aria-hidden="true"></i>
+                                        <p class="fs-5 mb-0 fw-semibold" id="weatherDescription">--</p>
+                                    </div>
+                                    
+                                    <!-- Temperature and Humidity Row -->
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-thermometer-half text-warning fs-4 me-1" aria-hidden="true"></i>
+                                                <span class="fs-4 fw-bold" id="currentTemp">--°</span>
+                                            </div>
+                                            <small class="text-muted">Temp</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-droplet-fill text-primary fs-4 me-1" aria-hidden="true"></i>
+                                                <span class="fs-4 fw-bold" id="currentHumidity">--%</span>
+                                            </div>
+                                            <small class="text-muted">Humidity</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-thermometer-sun text-info fs-4 me-1" aria-hidden="true"></i>
+                                                <span class="fs-4 fw-bold" id="feelsLike">--°</span>
+                                            </div>
+                                            <small class="text-muted">Feels Like</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Weather Details -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-12 col-lg-10">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0 h5">
+                                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                Additional Details
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 col-md-3 mb-3">
+                                    <i class="bi bi-wind text-secondary fs-1" aria-hidden="true"></i>
+                                    <p class="fw-bold mb-0" id="windSpeed">-- mph</p>
+                                    <small class="text-muted">Wind Speed</small>
+                                </div>
+                                <div class="col-6 col-md-3 mb-3">
+                                    <i class="bi bi-cloud-rain text-info fs-1" aria-hidden="true"></i>
+                                    <p class="fw-bold mb-0" id="precipitation">-- in</p>
+                                    <small class="text-muted">Precipitation</small>
+                                </div>
+                                <div class="col-6 col-md-3 mb-3">
+                                    <i class="bi bi-arrow-up-circle text-danger fs-1" aria-hidden="true"></i>
+                                    <p class="fw-bold mb-0" id="highTemp">--°</p>
+                                    <small class="text-muted">Today's High</small>
+                                </div>
+                                <div class="col-6 col-md-3 mb-3">
+                                    <i class="bi bi-arrow-down-circle text-primary fs-1" aria-hidden="true"></i>
+                                    <p class="fw-bold mb-0" id="lowTemp">--°</p>
+                                    <small class="text-muted">Today's Low</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hourly Forecast -->
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h4 class="mb-0 h5">
+                                <i class="bi bi-clock" aria-hidden="true"></i>
+                                Hourly Forecast (Next 6 Hours)
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center" id="hourlyForecast">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+    </main>
+    
+    <!-- Footer with Attribution -->
+    <footer class="bg-dark text-white py-3 mt-auto">
+        <div class="container text-center">
+            <p class="mb-1">
+                <i class="bi bi-cloud-sun" aria-hidden="true"></i>
+                Swelling Hippo Weather
+            </p>
+            <p class="mb-0 small">
+                Weather data provided by 
+                <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" class="text-info">
+                    Open-Meteo
+                </a>
+                (Licensed under 
+                <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" class="text-info">
+                    CC BY 4.0
+                </a>)
+            </p>
+            <p class="mb-0 small text-muted">
+                Geocoding by 
+                <a href="https://open-meteo.com/en/docs/geocoding-api" target="_blank" rel="noopener noreferrer" class="text-info">
+                    Open-Meteo
+                </a>
+                 | 
+                <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer" class="text-info">
+                    Nominatim/OpenStreetMap
+                </a>
+                 | 
+                <a href="https://www.zippopotam.us/" target="_blank" rel="noopener noreferrer" class="text-info">
+                    Zippopotam.us
+                </a>
+            </p>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    
+    <!-- Weather App JavaScript -->
+    <script>
+        /**
+         * Weather Application JavaScript
+         * Fetches weather data from Open-Meteo API and displays it
+         */
+        
+        // ============================================
+        // DOM Element References
+        // ============================================
+        
+        // Location input elements
+        const useMyLocationBtn = document.querySelector("#useMyLocationBtn");
+        const searchInput = document.querySelector("#searchInput");
+        const searchBtn = document.querySelector("#searchBtn");
+        const searchResultsContainer = document.querySelector("#searchResultsContainer");
+        const searchResults = document.querySelector("#searchResults");
+        
+        // Status elements
+        const loadingSpinner = document.querySelector("#loadingSpinner");
+        const loadingMessage = document.querySelector("#loadingMessage");
+        const errorAlert = document.querySelector("#errorAlert");
+        const errorMessage = document.querySelector("#errorMessage");
+        const weatherDisplay = document.querySelector("#weatherDisplay");
+        
+        // Current conditions elements
+        const locationNameEl = document.querySelector("#locationName");
+        const currentDateTime = document.querySelector("#currentDateTime");
+        const weatherIcon = document.querySelector("#weatherIcon");
+        const weatherDescription = document.querySelector("#weatherDescription");
+        const currentTemp = document.querySelector("#currentTemp");
+        const currentHumidity = document.querySelector("#currentHumidity");
+        const feelsLike = document.querySelector("#feelsLike");
+        
+        // Additional details elements
+        const windSpeed = document.querySelector("#windSpeed");
+        const precipitation = document.querySelector("#precipitation");
+        const highTemp = document.querySelector("#highTemp");
+        const lowTemp = document.querySelector("#lowTemp");
+        
+        // Hourly forecast container
+        const hourlyForecast = document.querySelector("#hourlyForecast");
+        
+        // ============================================
+        // Weather Code Mappings
+        // ============================================
+        
+        /**
+         * Maps Open-Meteo weather codes to Bootstrap Icons and descriptions
+         * Weather codes documentation: https://open-meteo.com/en/docs
+         */
+        const weatherCodeMap = {
+            0: { icon: "bi-sun-fill", description: "Clear Sky", color: "text-warning" },
+            1: { icon: "bi-sun", description: "Mainly Clear", color: "text-warning" },
+            2: { icon: "bi-cloud-sun-fill", description: "Partly Cloudy", color: "text-secondary" },
+            3: { icon: "bi-clouds-fill", description: "Overcast", color: "text-secondary" },
+            45: { icon: "bi-cloud-fog-fill", description: "Fog", color: "text-muted" },
+            48: { icon: "bi-cloud-fog2-fill", description: "Depositing Rime Fog", color: "text-muted" },
+            51: { icon: "bi-cloud-drizzle", description: "Light Drizzle", color: "text-info" },
+            53: { icon: "bi-cloud-drizzle-fill", description: "Moderate Drizzle", color: "text-info" },
+            55: { icon: "bi-cloud-drizzle-fill", description: "Dense Drizzle", color: "text-info" },
+            56: { icon: "bi-cloud-sleet", description: "Light Freezing Drizzle", color: "text-primary" },
+            57: { icon: "bi-cloud-sleet-fill", description: "Dense Freezing Drizzle", color: "text-primary" },
+            61: { icon: "bi-cloud-rain", description: "Slight Rain", color: "text-primary" },
+            63: { icon: "bi-cloud-rain-fill", description: "Moderate Rain", color: "text-primary" },
+            65: { icon: "bi-cloud-rain-heavy-fill", description: "Heavy Rain", color: "text-primary" },
+            66: { icon: "bi-cloud-sleet", description: "Light Freezing Rain", color: "text-info" },
+            67: { icon: "bi-cloud-sleet-fill", description: "Heavy Freezing Rain", color: "text-info" },
+            71: { icon: "bi-cloud-snow", description: "Slight Snow", color: "text-info" },
+            73: { icon: "bi-cloud-snow-fill", description: "Moderate Snow", color: "text-info" },
+            75: { icon: "bi-snow", description: "Heavy Snow", color: "text-info" },
+            77: { icon: "bi-snow2", description: "Snow Grains", color: "text-info" },
+            80: { icon: "bi-cloud-rain", description: "Slight Rain Showers", color: "text-primary" },
+            81: { icon: "bi-cloud-rain-fill", description: "Moderate Rain Showers", color: "text-primary" },
+            82: { icon: "bi-cloud-rain-heavy-fill", description: "Violent Rain Showers", color: "text-primary" },
+            85: { icon: "bi-cloud-snow", description: "Slight Snow Showers", color: "text-info" },
+            86: { icon: "bi-cloud-snow-fill", description: "Heavy Snow Showers", color: "text-info" },
+            95: { icon: "bi-cloud-lightning-rain-fill", description: "Thunderstorm", color: "text-warning" },
+            96: { icon: "bi-cloud-lightning-rain-fill", description: "Thunderstorm with Slight Hail", color: "text-danger" },
+            99: { icon: "bi-cloud-lightning-rain-fill", description: "Thunderstorm with Heavy Hail", color: "text-danger" }
+        };
+        
+        /**
+         * US State abbreviations for filtering search results
+         */
+        const usStateAbbreviations = [
+            "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+            "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+            "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+            "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+            "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+            "DC", "PR", "VI", "GU", "AS", "MP"
+        ];
+        
+        /**
+         * State name to abbreviation mapping
+         */
+        const stateNameToAbbr = {
+            "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
+            "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
+            "Florida": "FL", "Georgia": "GA", "Hawaii": "HI", "Idaho": "ID",
+            "Illinois": "IL", "Indiana": "IN", "Iowa": "IA", "Kansas": "KS",
+            "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME", "Maryland": "MD",
+            "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN", "Mississippi": "MS",
+            "Missouri": "MO", "Montana": "MT", "Nebraska": "NE", "Nevada": "NV",
+            "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+            "North Carolina": "NC", "North Dakota": "ND", "Ohio": "OH", "Oklahoma": "OK",
+            "Oregon": "OR", "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC",
+            "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT",
+            "Vermont": "VT", "Virginia": "VA", "Washington": "WA", "West Virginia": "WV",
+            "Wisconsin": "WI", "Wyoming": "WY", "District of Columbia": "DC"
+        };
+        
+        // ============================================
+        // Helper Functions
+        // ============================================
+        
+        /**
+         * Shows the loading spinner with a custom message
+         */
+        function showLoading(message) {
+            loadingMessage.textContent = message || "Fetching weather data...";
+            loadingSpinner.classList.remove("d-none");
+            weatherDisplay.classList.add("d-none");
+            errorAlert.classList.add("d-none");
+        }
+        
+        /**
+         * Hides the loading spinner
+         */
+        function hideLoading() {
+            loadingSpinner.classList.add("d-none");
+        }
+        
+        /**
+         * Displays an error message to the user
+         */
+        function showError(message) {
+            hideLoading();
+            errorMessage.textContent = message;
+            errorAlert.classList.remove("d-none");
+        }
+        
+        /**
+         * Shows the weather display section and hides loading/errors
+         */
+        function showWeatherDisplay() {
+            hideLoading();
+            errorAlert.classList.add("d-none");
+            weatherDisplay.classList.remove("d-none");
+        }
+        
+        /**
+         * Gets weather icon and description based on weather code
+         */
+        function getWeatherInfo(code) {
+            return weatherCodeMap[code] || { 
+                icon: "bi-question-circle", 
+                description: "Unknown Conditions", 
+                color: "text-muted" 
+            };
+        }
+        
+        /**
+         * Formats a date/time string for display
+         */
+        function formatDateTime(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            return date.toLocaleString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            });
+        }
+        
+        /**
+         * Formats an hour for display in hourly forecast
+         */
+        function formatHour(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            return date.toLocaleString("en-US", {
+                hour: "numeric",
+                hour12: true
+            });
+        }
+        
+        /**
+         * Checks if a string is a valid US zip code (5 digits)
+         */
+        function isZipCode(str) {
+            const zipCodeRegex = /^\d{5}$/;
+            return zipCodeRegex.test(str.trim());
+        }
+        
+        /**
+         * Parses search input to extract city name and optional state
+         */
+        function parseSearchInput(input) {
+            const trimmed = input.trim();
+            
+            // Check for comma-separated format (e.g., "Dallas, TX")
+            if (trimmed.includes(",")) {
+                const parts = trimmed.split(",").map(function(part) {
+                    return part.trim();
+                });
+                return {
+                    cityName: parts[0],
+                    state: parts[1] ? parts[1].toUpperCase() : null
+                };
+            }
+            
+            // Check for space-separated state abbreviation (e.g., "Dallas TX")
+            const words = trimmed.split(/\s+/);
+            if (words.length >= 2) {
+                const lastWord = words[words.length - 1].toUpperCase();
+                if (usStateAbbreviations.includes(lastWord)) {
+                    return {
+                        cityName: words.slice(0, -1).join(" "),
+                        state: lastWord
+                    };
+                }
+            }
+            
+            return {
+                cityName: trimmed,
+                state: null
+            };
+        }
+        
+        /**
+         * Gets state abbreviation from full state name
+         */
+        function getStateAbbreviation(stateName) {
+            return stateNameToAbbr[stateName] || null;
+        }
+        
+        // ============================================
+        // Geolocation Functions
+        // ============================================
+        
+        /**
+         * Gets the user's current location using the Geolocation API
+         */
+        function getCurrentPosition() {
+            return new Promise(function(resolve, reject) {
+                // Check if geolocation is supported
+                if (!navigator.geolocation) {
+                    reject(new Error("Geolocation is not supported by your browser"));
+                    return;
+                }
+                
+                // Request user's position
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        });
+                    },
+                    function(error) {
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                reject(new Error("Location permission denied. Please enable location services."));
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                reject(new Error("Location information is unavailable."));
+                                break;
+                            case error.TIMEOUT:
+                                reject(new Error("Location request timed out."));
+                                break;
+                            default:
+                                reject(new Error("An unknown error occurred while getting location."));
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 300000
+                    }
+                );
+            });
+        }
+        
+        /**
+         * Performs reverse geocoding to get city/state from coordinates
+         * Uses Nominatim API
+         */
+        async function reverseGeocode(latitude, longitude) {
+            // Build Nominatim API URL for reverse geocoding
+            const apiUrl = "https://nominatim.openstreetmap.org/reverse?" +
+                "lat=" + latitude + 
+                "&lon=" + longitude + 
+                "&format=json" +
+                "&addressdetails=1";
+            
+            console.log("Reverse Geocoding URL:", apiUrl);
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        // Nominatim requires a User-Agent header
+                        "User-Agent": "WeatherApp/1.0"
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error("Reverse geocoding failed");
+                }
+                
+                const data = await response.json();
+                console.log("Reverse Geocoding Response:", data);
+                
+                // Extract city and state from the response
+                const address = data.address;
+                
+                if (address) {
+                    // Try to get city name (could be city, town, village, etc.)
+                    const city = address.city || 
+                                 address.town || 
+                                 address.village || 
+                                 address.municipality ||
+                                 address.county;
+                    
+                    // Get state abbreviation
+                    const stateName = address.state;
+                    const stateAbbr = getStateAbbreviation(stateName) || stateName;
+                    
+                    // Return formatted location name
+                    if (city && stateAbbr) {
+                        return city + ", " + stateAbbr;
+                    } else if (city) {
+                        return city;
+                    }
+                }
+                
+                // Fallback if we couldn't parse the address
+                return "Your Location";
+                
+            } catch (error) {
+                console.error("Reverse geocoding error:", error);
+                // Return a generic name if reverse geocoding fails
+                return "Your Location";
+            }
+        }
+        
+        // ============================================
+        // Geocoding Functions (City and Zip Code Search)
+        // ============================================
+        
+        /**
+         * Searches for locations by city name using Open-Meteo Geocoding API
+         */
+        async function searchByCity(cityName, stateFilter) {
+            const apiUrl = "https://geocoding-api.open-meteo.com/v1/search?name=" + 
+                encodeURIComponent(cityName) + "&count=50&language=en&format=json";
+            
+            console.log("Geocoding API URL:", apiUrl);
+            
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error("Failed to search for city");
+            }
+            
+            const data = await response.json();
+            console.log("Geocoding API Response:", data);
+            
+            if (!data.results || data.results.length === 0) {
+                throw new Error("No results found for \"" + cityName + "\"");
+            }
+            
+            // Filter to US locations only
+            let usResults = data.results.filter(function(result) {
+                return result.country_code === "US" || result.country === "United States";
+            });
+            
+            // Apply state filter if provided
+            if (stateFilter && usResults.length > 0) {
+                const stateFiltered = usResults.filter(function(result) {
+                    const admin1Upper = (result.admin1 || "").toUpperCase();
+                    const stateFilterUpper = stateFilter.toUpperCase();
+                    return admin1Upper === stateFilterUpper || 
+                           admin1Upper.startsWith(stateFilterUpper) ||
+                           getStateAbbreviation(result.admin1) === stateFilterUpper;
+                });
+                
+                if (stateFiltered.length > 0) {
+                    usResults = stateFiltered;
+                }
+            }
+            
+            if (usResults.length === 0) {
+                throw new Error("No US locations found for \"" + cityName + "\"");
+            }
+            
+            // Map results to simpler format
+            return usResults.map(function(result) {
+                return {
+                    latitude: result.latitude,
+                    longitude: result.longitude,
+                    name: result.name,
+                    admin1: result.admin1 || "",
+                    population: result.population || 0
+                };
+            });
+        }
+        
+        /**
+         * Searches for location by US zip code using Zippopotam.us API
+         */
+        async function searchByZipCode(zipCode) {
+            const apiUrl = "https://api.zippopotam.us/us/" + zipCode;
+            console.log("Zip Code API URL:", apiUrl);
+            
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error("Zip code \"" + zipCode + "\" not found");
+                }
+                throw new Error("Failed to lookup zip code");
+            }
+            
+            const data = await response.json();
+            console.log("Zip Code API Response:", data);
+            
+            if (!data.places || data.places.length === 0) {
+                throw new Error("No location found for zip code \"" + zipCode + "\"");
+            }
+            
+            const place = data.places[0];
+            
+            return {
+                latitude: parseFloat(place.latitude),
+                longitude: parseFloat(place.longitude),
+                name: place["place name"] + ", " + place["state abbreviation"]
+            };
+        }
+        
+        // ============================================
+        // Weather API Functions
+        // ============================================
+        
+        /**
+         * Fetches weather data from the Open-Meteo API
+         */
+        async function fetchWeatherData(latitude, longitude) {
+            const apiUrl = "https://api.open-meteo.com/v1/forecast?" +
+                "latitude=" + latitude + "&" +
+                "longitude=" + longitude + "&" +
+                "current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&" +
+                "hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&" +
+                "daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&" +
+                "temperature_unit=fahrenheit&" +
+                "wind_speed_unit=mph&" +
+                "precipitation_unit=inch&" +
+                "timezone=auto";
+            
+            console.log("Weather API URL:", apiUrl);
+            
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error("Weather API error: " + response.status);
+            }
+            
+            return await response.json();
+        }
+        
+        // ============================================
+        // UI Update Functions
+        // ============================================
+        
+        /**
+         * Updates the current conditions section of the UI
+         */
+        function updateCurrentConditions(data, name) {
+            // Update location name
+            locationNameEl.textContent = name;
+            
+            // Update current date/time
+            currentDateTime.textContent = formatDateTime(data.current.time);
+            
+            // Get weather info based on weather code
+            const weatherInfo = getWeatherInfo(data.current.weather_code);
+            
+            // Update weather icon using className
+            weatherIcon.className = "bi " + weatherInfo.icon + " " + weatherInfo.color + " display-1";
+            
+            // Update weather description
+            weatherDescription.textContent = weatherInfo.description;
+            
+            // Update temperature values
+            currentTemp.textContent = Math.round(data.current.temperature_2m) + "°";
+            feelsLike.textContent = Math.round(data.current.apparent_temperature) + "°";
+            
+            // Update humidity
+            currentHumidity.textContent = data.current.relative_humidity_2m + "%";
+        }
+        
+        /**
+         * Updates the additional details section of the UI
+         */
+        function updateAdditionalDetails(data) {
+            windSpeed.textContent = Math.round(data.current.wind_speed_10m) + " mph";
+            precipitation.textContent = data.current.precipitation + " in";
+            highTemp.textContent = Math.round(data.daily.temperature_2m_max[0]) + "°";
+            lowTemp.textContent = Math.round(data.daily.temperature_2m_min[0]) + "°";
+        }
+        
+        /**
+         * Updates the hourly forecast section of the UI
+         */
+        function updateHourlyForecast(data) {
+            // Clear existing forecast content
+            hourlyForecast.innerHTML = "";
+            
+            // Find the starting index for current hour
+            const currentTime = new Date(data.current.time);
+            let startIndex = 0;
+            
+            for (let i = 0; i < data.hourly.time.length; i++) {
+                const hourTime = new Date(data.hourly.time[i]);
+                if (hourTime >= currentTime) {
+                    startIndex = i;
+                    break;
+                }
+            }
+            
+            // Display the next 6 hours of forecast
+            for (let i = startIndex; i < startIndex + 6 && i < data.hourly.time.length; i++) {
+                const hourWeatherInfo = getWeatherInfo(data.hourly.weather_code[i]);
+                
+                const hourCol = document.createElement("div");
+                hourCol.className = "col-4 col-sm-2 mb-3";
+                
+                hourCol.innerHTML = 
+                    "<p class=\"fw-bold mb-1\">" + formatHour(data.hourly.time[i]) + "</p>" +
+                    "<i class=\"bi " + hourWeatherInfo.icon + " " + hourWeatherInfo.color + " fs-3\" aria-hidden=\"true\"></i>" +
+                    "<p class=\"mb-0 fw-semibold\">" + Math.round(data.hourly.temperature_2m[i]) + "°</p>" +
+                    "<small class=\"text-muted\">" +
+                    "<i class=\"bi bi-droplet\" aria-hidden=\"true\"></i> " +
+                    data.hourly.precipitation_probability[i] + "%" +
+                    "</small>";
+                
+                hourlyForecast.appendChild(hourCol);
+            }
+        }
+        
+        /**
+         * Displays search results for the user to select from
+         */
+        function displaySearchResults(results) {
+            // Clear previous results
+            searchResults.innerHTML = "";
+            
+            // Sort by population
+            results.sort(function(a, b) {
+                return (b.population || 0) - (a.population || 0);
+            });
+            
+            // Limit to top 10 results
+            const limitedResults = results.slice(0, 10);
+            
+            // Create list item for each result
+            limitedResults.forEach(function(result) {
+                const listItem = document.createElement("button");
+                listItem.type = "button";
+                listItem.className = "list-group-item list-group-item-action";
+                
+                // Format display name
+                const stateAbbr = getStateAbbreviation(result.admin1) || result.admin1;
+                const displayName = result.admin1 
+                    ? result.name + ", " + stateAbbr 
+                    : result.name;
+                
+                listItem.innerHTML = 
+                    "<i class=\"bi bi-geo-alt text-danger me-2\" aria-hidden=\"true\"></i>" +
+                    "<strong>" + displayName + "</strong>";
+                
+                // Add click handler
+                listItem.addEventListener("click", function() {
+                    searchResultsContainer.classList.add("d-none");
+                    searchInput.value = "";
+                    getWeatherForLocation(result.latitude, result.longitude, displayName);
+                });
+                
+                searchResults.appendChild(listItem);
+            });
+            
+            // Show results container
+            searchResultsContainer.classList.remove("d-none");
+        }
+        
+        // ============================================
+        // Main Weather Functions
+        // ============================================
+        
+        /**
+         * Fetches and displays weather for a specific location
+         */
+        async function getWeatherForLocation(latitude, longitude, name) {
+            showLoading("Fetching weather data...");
+            
+            try {
+                const data = await fetchWeatherData(latitude, longitude);
+                console.log("Weather Data:", data);
+                
+                // Update all UI sections
+                updateCurrentConditions(data, name);
+                updateAdditionalDetails(data);
+                updateHourlyForecast(data);
+                
+                showWeatherDisplay();
+                
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+                showError("Failed to fetch weather data. Please try again.");
+            }
+        }
+        
+        /**
+         * Handles the "Use My Location" button click
+         * Gets geolocation, then fetches weather
+         */
+        async function handleUseMyLocation() {
+            showLoading("Getting your location...");
+            
+            try {
+                // Get user's current position
+                const position = await getCurrentPosition();
+                console.log("User location:", position);
+                
+                // Update loading message while we reverse geocode
+                showLoading("Finding your city...");
+                
+                // Get city name from coordinates
+                const locationName = await reverseGeocode(position.latitude, position.longitude);
+                console.log("Location name:", locationName);
+                
+                // Fetch and display weather
+                await getWeatherForLocation(
+                    position.latitude, 
+                    position.longitude, 
+                    locationName
+                );
+                
+            } catch (error) {
+                console.error("Geolocation error:", error);
+                showError(error.message);
+            }
+        }
+        
+        /**
+         * Handles the search functionality
+         * Determines if input is zip code or city name and searches accordingly
+         */
+        async function handleSearch() {
+            const searchValue = searchInput.value.trim();
+            
+            if (!searchValue) {
+                showError("Please enter a city name or zip code");
+                return;
+            }
+            
+            showLoading("Searching for location...");
+            searchResultsContainer.classList.add("d-none");
+            
+            try {
+                if (isZipCode(searchValue)) {
+                    // Search by zip code
+                    console.log("Searching by zip code:", searchValue);
+                    const location = await searchByZipCode(searchValue);
+                    
+                    await getWeatherForLocation(
+                        location.latitude,
+                        location.longitude,
+                        location.name
+                    );
+                    
+                } else {
+                    // Parse input for city and state
+                    const parsed = parseSearchInput(searchValue);
+                    console.log("Parsed search input:", parsed);
+                    
+                    const results = await searchByCity(parsed.cityName, parsed.state);
+                    console.log("Search results:", results);
+                    
+                    if (results.length === 1) {
+                        // Single result - fetch directly
+                        const location = results[0];
+                        const stateAbbr = getStateAbbreviation(location.admin1) || location.admin1;
+                        const displayName = location.admin1 
+                            ? location.name + ", " + stateAbbr 
+                            : location.name;
+                        
+                        await getWeatherForLocation(
+                            location.latitude,
+                            location.longitude,
+                            displayName
+                        );
+                    } else {
+                        // Multiple results - show selection
+                        hideLoading();
+                        displaySearchResults(results);
+                    }
+                }
+                
+            } catch (error) {
+                console.error("Search error:", error);
+                showError(error.message);
+            }
+        }
+        
+        // ============================================
+        // Event Listeners
+        // ============================================
+        
+        // "Use My Location" button
+        useMyLocationBtn.addEventListener("click", handleUseMyLocation);
+        
+        // Search button
+        searchBtn.addEventListener("click", handleSearch);
+        
+        // Search input - Enter key
+        searchInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                handleSearch();
+            }
+        });
+        
+        // ============================================
+        // Initialize
+        // ============================================
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("Weather App initialized");
+        });
+
+            // ============================================
+            // Dancing Hippos (Just for Fun!)
+            // ============================================
+
+            /**
+             * Creates and animates dancing hippos in the background
+             */
+            function initDancingHippos() {
+                const hippoContainer = document.querySelector("#hippoContainer");
+                const numberOfHippos = 25;
+                const hippos = [];
+                const hippoSize = 130
+                
+                // Hippo emoji
+                const hippoEmoji = "🦛";
+                
+                /**
+                 * Creates a hippo element
+                 */
+                function createHippo(index) {
+                    // Create the hippo element
+                    const hippo = document.createElement("div");
+                    hippo.className = "position-absolute";
+                    hippo.textContent = hippoEmoji;
+                    hippo.id = "hippo-" + index;
+                    
+                    // Set initial random position
+                    const startX = Math.random() * (window.innerWidth - 100);
+                    const startY = Math.random() * (window.innerHeight - 100);
+                    
+                    // Set initial styles using inline styles (allowed per assignment)
+                    hippo.style.left = startX + "px";
+                    hippo.style.top = startY + "px";
+                    hippo.style.fontSize = "7.5rem";
+                    hippo.style.opacity = "1.00";
+                    hippo.style.transition = "transform 0.175s";
+                    hippo.style.zIndex = "-1";
+                    
+                    // Add to container
+                    hippoContainer.appendChild(hippo);
+                    
+                    // Return hippo object with animation properties
+                    return {
+                        element: hippo,
+                        x: startX,
+                        y: startY,
+                        speedX: (Math.random() - 0.75) * 3,
+                        speedY: (Math.random() - 0.33) * 7,
+                        dancePhase: Math.random() * Math.PI * 2,
+                        danceSpeed: 0.075 + Math.random() * 0.066,
+                        mass: 10
+                    };
+                }
+                
+                    
+
+                /**
+                 * Updates hippo position and creates dancing motion
+                 */
+                function animateHippo(hippo) {
+                    // Update dance phase for wobble effect
+                    hippo.dancePhase += hippo.danceSpeed;
+                    
+                    // Move the hippo
+                    hippo.x += hippo.speedX;
+                    hippo.y += hippo.speedY;
+                    
+                    // Bounce off walls
+                    if (hippo.x <= 0 || hippo.x >= window.innerWidth - 50) {
+                        hippo.speedX *= -1;
+                        hippo.x = Math.max(0, Math.min(hippo.x, window.innerWidth - 50));
+                    }
+                    if (hippo.y <= 0 || hippo.y >= window.innerHeight - 50) {
+                        hippo.speedY *= -1;
+                        hippo.y = Math.max(0, Math.min(hippo.y, window.innerHeight - 50));
+                    }
+                    
+                    // Calculate dance wobble
+                    const wobbleX = Math.sin(hippo.dancePhase) * 10;
+                    const wobbleY = Math.cos(hippo.dancePhase * 2) * 5;
+                    const rotation = Math.sin(hippo.dancePhase) * 15;
+                    const scale = 1 + Math.sin(hippo.dancePhase * 2) * 0.1;
+                    
+                    // Apply position and dance
+                    hippo.element.style.left = (hippo.x + wobbleX) + "px";
+                    hippo.element.style.top = (hippo.y + wobbleY) + "px";
+                    hippo.element.style.transform = "rotate(" + rotation + "deg) scale(" + scale + ")";
+                }
+                
+                /**
+                 * Limits hippo speed to prevent them from going too fast after collisions
+                 */
+                function limitSpeed(hippo) {
+                    const maxSpeed = 20;
+                    const currentSpeed = Math.sqrt(hippo.speedX * hippo.speedX + hippo.speedY * hippo.speedY);
+                    
+                    if (currentSpeed > maxSpeed) {
+                        const ratio = maxSpeed / currentSpeed;
+                        hippo.speedX *= ratio;
+                        hippo.speedY *= ratio;
+                    }
+                }
+
+                // Create hippos
+                for (let i = 0; i < numberOfHippos; i++) {
+                    hippos.push(createHippo(i));
+                }
+                
+                // Animation loop
+                setInterval(function() {
+                    hippos.forEach(function(hippo) {
+                        animateHippo(hippo);
+                    });
+                }, 50);
+                
+                console.log("🦛 Dancing hippos initialized! 🦛");
+            }
+
+            // Start the hippos when page loads
+            initDancingHippos();
+    </script>
+    
+</body>
+</html>
